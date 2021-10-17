@@ -21,7 +21,7 @@ tax  <- read_tsv("NUTRIPERSO_assembled_350_OTU.tax", col_names = F)
 # Parsing failure rows 190 and 507 (concatenated cols), to remove
 
 # Tidy taxonomy table and filter by threshold >0.5 or >0.7
-thr <- 0.5
+thr <- 0.7
 taxmat <- tax %>% remove_constant() %>% select(-X2) %>% slice(-c(190, 507)) %>%
   filter(X5 > thr & X8 > thr & X11 > thr & X14 > thr & X17 > thr & X20 > thr) %>%
   select(-X5, -X8, -X11, -X14, -X16, -X17, -X19, -X20) %>% as.matrix
@@ -51,7 +51,7 @@ TAX = tax_table(taxmat)
 # Combine objects
 physeq <- phyloseq(OTU, TAX)
 physeq
-#plot_bar(physeq, fill = "Phylum")
+plot_bar(physeq, fill = "Phylum")
 
 # Create sample data
 rownames(dat) <- str_remove(dat$ID, pattern = "-")
@@ -77,6 +77,21 @@ plot_bar(physeq1, x="diabete_groupe", fill = "Phylum")
 
 # Facetted (doesn't work well)
 plot_bar(physeq1, fill = "Phylum", facet_grid = ~ diabete_groupe)
+
+# Subsets
+ntaxa(physeq1)
+nsamples(physeq1)
+
+# Pre-processing. Transform to relative abundances (scale 0-1), filter
+NPr  = transform_sample_counts(physeq1, function(x) x / sum(x) )
+NPfr = filter_taxa(NPr, function(x) mean(x) > 1e-5, TRUE)
+
+# Subset controls
+NPfr.cont <- subset_samples(NPfr, casnutpkt == "TEMOIN" & RUN == "RUN1")
+nsamples(NPfr.cont) #69 samples
+plot_bar(NPfr.cont, fill = "Phylum")
+
+
 
 
 # What is the .fna file for?
