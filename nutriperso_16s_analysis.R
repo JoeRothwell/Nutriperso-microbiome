@@ -34,7 +34,7 @@ plot_ordination(physeq1, GP.ord, type="samples", color="casnutpkt", shape="diabe
 
 # Measures of alpha diversity
 plot_richness(physeq1, x="diabete_groupe")
-plot_richness(physeq1, x="casnutpkt")
+plot_richness(physeq1, x="casnutpkt", color = "casnutpkt")
 # Just selected measures
 plot_richness(physeq1, x="diabete_groupe", measures = c("Shannon", "Simpson"))
 

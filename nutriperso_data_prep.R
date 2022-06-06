@@ -65,6 +65,7 @@ otu.align <- msa(retained.otu, type = "dna", method = "Muscle")
 otu.align1 <- msaConvert(otu.align, type = "seqinr::alignment")
 otu.dist <- dist.alignment(otu.align1, "identity")
 # Neighbour-joining tree estimation in ape
+library(ape)
 otuTree <- nj(otu.dist)
 plot(otuTree)
 
@@ -85,7 +86,6 @@ library(phangorn)
 # Not sure how to do it this way
 
 # Reading in data with ape
-library(ape)
 dat <- read.dna("NUTRIPERSO_assembled_350_OTU.fna", format = "fasta")
 
 # Make phyloseq object using constructors like otu_table
