@@ -8,9 +8,13 @@ library(readxl)
 dat <- read_xlsx("NP_RawSeq_ID.xlsx")
 
 # E3N variables
-#micro <- read_xls("microbiome_20210106.xls")
+micro <- read_xls("microbiome_20210106.xls")
 library(haven)
 micro <- read_sas("nutriperso_20210304.sas7bdat")
+
+# Join 2 sets of participant data
+dat$ident <- as.character(dat$ident)
+dat <- left_join(dat, micro, by = "ident")
 
 # Preparation of 16s data.Two sets of data are provided, OTU and ASV. Explanation at:
 # https://bioconductor.org/help/course-materials/2017/BioC2017/Day1/Workshops/Microbiome/MicrobiomeWorkflowII.html#abstract
@@ -62,7 +66,7 @@ retained.otu <- dat1[rownames(otumat1)]
 otu.align <- msa(retained.otu, type = "dna", method = "Muscle")
 
 # Convert to a seqinr object
-library(sequinr)
+library(seqinr)
 otu.align1 <- msaConvert(otu.align, type = "seqinr::alignment")
 otu.dist <- dist.alignment(otu.align1, "identity")
 # Neighbour-joining tree estimation in ape

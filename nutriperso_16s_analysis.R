@@ -4,7 +4,7 @@ library(phyloseq)
 # http://joey711.github.io/phyloseq/plot_bar-examples#enterotypes_dataset_examples
 # Default plot is abundance
 plot_bar(physeq1)
-plot_bar(physeq1, fill = "Phylum")
+plot_bar(physeq1, fill = "Phylum") + theme(axis.labels.x = element_blank())
 
 # Group by a variable
 plot_bar(physeq1, x="casnutpkt", fill = "Phylum")
@@ -18,6 +18,7 @@ plot_heatmap(physeq1)
 
 # Plot tree with labelled diabetes group (too complex to read)
 plot_tree(physeq1, color="Phylum", shape="diabete_groupe", size="abundance")
+plot_tree(physeq1)
 
 # Subsets
 ntaxa(physeq1)
