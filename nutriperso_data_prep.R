@@ -62,12 +62,15 @@ retained.otu <- dat1[rownames(otumat1)]
 otu.align <- msa(retained.otu, type = "dna", method = "Muscle")
 
 # Convert to a seqinr object
+library(sequinr)
 otu.align1 <- msaConvert(otu.align, type = "seqinr::alignment")
 otu.dist <- dist.alignment(otu.align1, "identity")
 # Neighbour-joining tree estimation in ape
 library(ape)
 otuTree <- nj(otu.dist)
 plot(otuTree)
+# Can also use phyloseq and phangorn
+plot_tree(otuTree, size="Abundance", color="Sample", base.spacing=0.03)
 
 # Other things investigated but not used
 # Here is a random tree in ape:
@@ -75,7 +78,6 @@ random_tree = rtree(ntaxa(physeq), rooted=TRUE, tip.label=taxa_names(physeq))
 plot(random_tree)
 
 # Read in the OTU sequences from the fna file with seqinr (not used)
-library(seqinr)
 seqs <- read.fasta("NUTRIPERSO_assembled_350_OTU.fna")
 
 # Phangorn produces more sophisticated trees
