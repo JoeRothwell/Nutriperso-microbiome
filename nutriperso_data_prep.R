@@ -3,7 +3,8 @@ library(readr)
 library(janitor)
 library(tidyverse)
 
-# Case-control data (initially sent to INRA)
+# Preparation of participant data ----
+# Data for case-control initially sent to INRA
 library(readxl)
 dat <- read_xlsx("NP_RawSeq_ID.xlsx")
 
@@ -16,7 +17,8 @@ micro <- read_sas("nutriperso_20210304.sas7bdat")
 dat$ident <- as.character(dat$ident)
 dat <- left_join(dat, micro, by = "ident")
 
-# Preparation of 16s data.Two sets of data are provided, OTU and ASV. Explanation at:
+# Preparation of 16s data ----
+# Two sets of data are provided, OTU and ASV. Explanation at:
 # https://bioconductor.org/help/course-materials/2017/BioC2017/Day1/Workshops/Microbiome/MicrobiomeWorkflowII.html#abstract
 # There are two tables per method: the distributions (.txt) and the taxonomic assignments for each OTU 
 # See emails from Patricia, 18th May and 11th Oct
@@ -28,7 +30,9 @@ tax  <- read_tsv("NUTRIPERSO_assembled_350_OTU.tax", col_names = F)
 
 # Tidy taxonomy table and filter by threshold >0.5 or >0.7
 thr <- 0.7
-taxmat <- tax %>% remove_constant() %>% select(-X2) %>% slice(-c(190, 507)) %>%
+taxmat <- tax %>% 
+  remove_constant() %>% 
+  select(-X2) %>% dplyr::slice(-c(190, 507)) %>%
   filter(X5 > thr & X8 > thr & X11 > thr & X14 > thr & X17 > thr & X20 > thr) %>%
   select(-X5, -X8, -X11, -X14, -X17, -X20) %>% as.matrix
 
@@ -52,35 +56,40 @@ taxmat <- taxmat[, -1]
 colnames(taxmat) <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus")
 rownames(taxmat) <- rownames(otumat1)
 
-# Get phylogenetic tree
+# Get phylogenetic tree ----
 # Some info here: https://bioconductor.org/help/course-materials/2017/BioC2017/Day1/Workshops/Microbiome/MicrobiomeWorkflowII.html#construct_phylogenetic_tree
 # Also: https://rachaellappan.github.io/16S-analysis/index.html . From this site:
 # the UniFrac metric uses it for beta diversity calculations, as does the phylogenetic  
-# alpha diversity metric Faith’s PD
+# alpha diversity metric, Faith’s PD
 
-# Use msa package for to align 16s sequences (uses command line tools clustal and muscle)
-# Only muscle worked
-library(msa)
+# Use msa package to align 16s sequences (uses command line tools clustal and muscle)
+# Only muscle worked (takes a while)
 dat1 <- readDNAStringSet("NUTRIPERSO_assembled_350_OTU.fna")
 retained.otu <- dat1[rownames(otumat1)]
+library(msa)
 otu.align <- msa(retained.otu, type = "dna", method = "Muscle")
 
 # Convert to a seqinr object
 library(seqinr)
 otu.align1 <- msaConvert(otu.align, type = "seqinr::alignment")
 otu.dist <- dist.alignment(otu.align1, "identity")
+
 # Neighbour-joining tree estimation in ape
 library(ape)
+
+# Here is a random tree in ape:
+#random_tree = rtree(ntaxa(physeq), rooted=TRUE, tip.label=taxa_names(physeq))
+#plot(random_tree)
+
+# Tree of our data
 otuTree <- nj(otu.dist)
 plot(otuTree)
-# Can also use phyloseq and phangorn
+
+# Can also use phyloseq (and phangorn)
+library(phyloseq)
 plot_tree(otuTree, size="Abundance", color="Sample", base.spacing=0.03)
 
 # Other things investigated but not used
-# Here is a random tree in ape:
-random_tree = rtree(ntaxa(physeq), rooted=TRUE, tip.label=taxa_names(physeq))
-plot(random_tree)
-
 # Read in the OTU sequences from the fna file with seqinr (not used)
 seqs <- read.fasta("NUTRIPERSO_assembled_350_OTU.fna")
 
@@ -95,7 +104,6 @@ library(phangorn)
 dat <- read.dna("NUTRIPERSO_assembled_350_OTU.fna", format = "fasta")
 
 # Make phyloseq object using constructors like otu_table
-library(phyloseq)
 OTU = otu_table(otumat1, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat)
 
@@ -110,7 +118,6 @@ sampdata1 <- dat[colnames(otumat1), ]
 # Make phyloseq object
 sampledata <- sample_data(data.frame(sampdata1, row.names = sample_names(physeq),
                                      stringsAsFactors = F))
-
 # Add sample data and phylogenetic tree
 physeq1 <- merge_phyloseq(physeq, sampledata, otuTree)
 physeq1
