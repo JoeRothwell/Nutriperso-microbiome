@@ -17,12 +17,13 @@ micro <- read_sas("nutriperso_20210304.sas7bdat")
 dat$ident <- as.character(dat$ident)
 dat <- left_join(dat, micro, by = "ident")
 
-# Preparation of 16s data ----
+# 16s data
 # Two sets of data are provided, OTU and ASV. Explanation at:
 # https://bioconductor.org/help/course-materials/2017/BioC2017/Day1/Workshops/Microbiome/MicrobiomeWorkflowII.html#abstract
 # There are two tables per method: the distributions (.txt) and the taxonomic assignments for each OTU 
 # See emails from Patricia, 18th May and 11th Oct
 
+# Preparation of OTU data ----
 # Start with OTU approach (distribution and taxonomies in separate tables)
 otus <- read.delim("NUTRIPERSO_assembled_350_TAB.txt")
 tax  <- read_tsv("NUTRIPERSO_assembled_350_OTU.tax", col_names = F)
@@ -103,7 +104,8 @@ library(phangorn)
 # Reading in data with ape
 dat <- read.dna("NUTRIPERSO_assembled_350_OTU.fna", format = "fasta")
 
-# Make phyloseq object using constructors like otu_table
+# Make phyloseq object ----
+# (using constructor functions)
 OTU = otu_table(otumat1, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat)
 
@@ -122,11 +124,20 @@ sampledata <- sample_data(data.frame(sampdata1, row.names = sample_names(physeq)
 physeq1 <- merge_phyloseq(physeq, sampledata, otuTree)
 physeq1
 
-### ASV approach. Data and taxonomies in the same table, with taxonomies at the end
-asvs <- read.delim("NUTRIPERSO_assembled_350_TAB_ASV.txt")
-tax <- asvs %>% select(OTU0:X1.0.5)
+# Preparation of ASV data ----
+# Read in ASVs, removing taxonomies tagged onto end of table
+asvs <- read.delim("NUTRIPERSO_assembled_350_TAB_ASV.txt") %>% select(-(OTU0:X1.0.5))
 
-#tax1 <- read_tsv("NUTRIPERSO_assembled_350_ASV.tax", col_names = F) 
+# Read in taxonomies
+tax <- read_tsv("NUTRIPERSO_assembled_350_ASV.tax", col_names = F) 
+
+# Tidy taxonomy table and filter by threshold >0.5 or >0.7
+thr <- 0.7
+taxmat <- tax %>% 
+  remove_constant() %>% 
+  select(-X2) %>% dplyr::slice(-c(190, 507)) %>%
+  filter(X5 > thr & X8 > thr & X11 > thr & X14 > thr & X17 > thr & X20 > thr) %>%
+  select(-X5, -X8, -X11, -X14, -X17, -X20) %>% as.matrix
 
 # Initial 16S data (abandonned)
 #dat16s <- read_xlsx("RelAb_OTUs_Tab_NP_Lepage.xlsx")
