@@ -11,7 +11,7 @@ dat <- read_xlsx("NP_RawSeq_ID.xlsx")
 # E3N variables
 micro <- read_xls("microbiome_20210106.xls")
 library(haven)
-micro <- read_sas("nutriperso_20210304.sas7bdat")
+# micro <- read_sas("nutriperso_20210304.sas7bdat")
 
 # Join 2 sets of participant data
 dat$ident <- as.character(dat$ident)
@@ -23,8 +23,11 @@ dat <- left_join(dat, micro, by = "ident")
 # There are two tables per method: the distributions (.txt) and the taxonomic assignments for each OTU 
 # See emails from Patricia, 18th May and 11th Oct
 
-# Preparation of OTU data ----
+
+
+### Preparation of OTU data ----
 # Start with OTU approach (distribution and taxonomies in separate tables)
+# For ASV see below
 otus <- read.delim("NUTRIPERSO_assembled_350_TAB.txt")
 tax  <- read_tsv("NUTRIPERSO_assembled_350_OTU.tax", col_names = F)
 # Parsing failure rows 190 and 507 (concatenated cols), to remove
@@ -57,7 +60,9 @@ taxmat <- taxmat[, -1]
 colnames(taxmat) <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus")
 rownames(taxmat) <- rownames(otumat1)
 
-# Get phylogenetic tree ----
+
+
+### Get phylogenetic tree ----
 # Some info here: https://bioconductor.org/help/course-materials/2017/BioC2017/Day1/Workshops/Microbiome/MicrobiomeWorkflowII.html#construct_phylogenetic_tree
 # Also: https://rachaellappan.github.io/16S-analysis/index.html . From this site:
 # the UniFrac metric uses it for beta diversity calculations, as does the phylogenetic  
@@ -65,9 +70,9 @@ rownames(taxmat) <- rownames(otumat1)
 
 # Use msa package to align 16s sequences (uses command line tools clustal and muscle)
 # Only muscle worked (takes a while)
+library(msa)
 dat1 <- readDNAStringSet("NUTRIPERSO_assembled_350_OTU.fna")
 retained.otu <- dat1[rownames(otumat1)]
-library(msa)
 otu.align <- msa(retained.otu, type = "dna", method = "Muscle")
 
 # Convert to a seqinr object
@@ -104,7 +109,9 @@ library(phangorn)
 # Reading in data with ape
 dat <- read.dna("NUTRIPERSO_assembled_350_OTU.fna", format = "fasta")
 
-# Make phyloseq object ----
+
+
+### Make phyloseq object ----
 # (using constructor functions)
 OTU = otu_table(otumat1, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat)
@@ -124,7 +131,9 @@ sampledata <- sample_data(data.frame(sampdata1, row.names = sample_names(physeq)
 physeq1 <- merge_phyloseq(physeq, sampledata, otuTree)
 physeq1
 
-# Preparation of ASV data ----
+
+
+### Preparation of ASV data ----
 # Read in ASVs, removing taxonomies tagged onto end of table
 asvs <- read.delim("NUTRIPERSO_assembled_350_TAB_ASV.txt") %>% select(-(OTU0:X1.0.5))
 
@@ -135,9 +144,40 @@ tax <- read_tsv("NUTRIPERSO_assembled_350_ASV.tax", col_names = F)
 thr <- 0.7
 taxmat <- tax %>% 
   remove_constant() %>% 
-  select(-X2) %>% dplyr::slice(-c(190, 507)) %>%
+  select(-X2) %>% #dplyr::slice(-c(190, 507)) %>%
   filter(X5 > thr & X8 > thr & X11 > thr & X14 > thr & X17 > thr & X20 > thr) %>%
   select(-X5, -X8, -X11, -X14, -X17, -X20) %>% as.matrix
 
-# Initial 16S data (abandonned)
-#dat16s <- read_xlsx("RelAb_OTUs_Tab_NP_Lepage.xlsx")
+nrow(taxmat) #2219 ASVs remaining for 0.7 threshold
+colnames(taxmat) <- c("otu", "Domain", "Phylum", "Class", "Order", "Family", "Genus")
+
+# Get overlap between kept OTUs above threshold and all in otu matrix
+vec <- intersect(taxmat[, 1], asvs$OTU)
+
+# In the asv data, remove OTU names and add back as rownames. Subset OTUs by their names in taxmat
+asvmat <- asvs[, -1]
+rownames(asvmat) <- asvs[, 1]
+asvmat1 <- asvmat[vec, ]
+
+# Add colnames for taxonomies
+taxmat <- taxmat[, -1]
+colnames(taxmat) <- c("Domain", "Phylum", "Class", "Order", "Family", "Genus")
+rownames(taxmat) <- rownames(asvmat1)
+
+
+
+# Get phylogenetic tree. Used by Faith's PD (alpha) and UniFrac (beta-diversity) metrics
+# Use msa package to align 16s sequences (uses command line tools clustal and muscle)
+# Only muscle worked (takes a while)
+dat1 <- readDNAStringSet("NUTRIPERSO_assembled_350_OTU.fna")
+retained.otu <- dat1[rownames(asvmat1)]
+library(msa)
+otu.align <- msa(retained.otu, type = "dna", method = "Muscle")
+
+# Convert to a seqinr object
+library(seqinr)
+otu.align1 <- msaConvert(otu.align, type = "seqinr::alignment")
+otu.dist <- dist.alignment(otu.align1, "identity")
+
+# Neighbour-joining tree estimation in ape
+library(ape)
