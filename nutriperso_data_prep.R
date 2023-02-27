@@ -97,7 +97,7 @@ plot_tree(otuTree, size="Abundance", color="Sample", base.spacing=0.03)
 
 # Other things investigated but not used
 # Read in the OTU sequences from the fna file with seqinr (not used)
-seqs <- read.fasta("NUTRIPERSO_assembled_350_OTU.fna")
+# seqs <- read.fasta("NUTRIPERSO_assembled_350_OTU.fna")
 
 # Phangorn produces more sophisticated trees
 library(phangorn)
@@ -107,7 +107,7 @@ library(phangorn)
 # Not sure how to do it this way
 
 # Reading in data with ape
-dat <- read.dna("NUTRIPERSO_assembled_350_OTU.fna", format = "fasta")
+# fas <- read.dna("NUTRIPERSO_assembled_350_OTU.fna", format = "fasta")
 
 
 
@@ -121,16 +121,29 @@ physeq <- phyloseq(OTU, TAX)
 physeq
 plot_bar(physeq, fill = "Phylum")
 
-# Create sample data
+# Get particpant data (sample data)
 rownames(dat) <- str_remove(dat$ID, pattern = "-")
 sampdata1 <- dat[colnames(otumat1), ]
-# Make phyloseq object
 sampledata <- sample_data(data.frame(sampdata1, row.names = sample_names(physeq),
                                      stringsAsFactors = F))
-# Add sample data and phylogenetic tree
-physeq1 <- merge_phyloseq(physeq, sampledata, otuTree)
-physeq1
 
+# Add sample data and phylogenetic tree
+nutri <- merge_phyloseq(physeq, sampledata, otuTree)
+nutri
+
+### Overview of data
+ntaxa(nutri)
+nsamples(nutri)
+sample_names(nutri)[1:5]
+
+### Pre-process data. Transform to relative abundance and filter taxa
+# nutrir  <- transform_sample_counts(nutri, function(x) x / sum(x) )
+nutrifr <- filter_taxa(nutri, function(x) mean(x) > 1e-5, TRUE)
+ntaxa(nutrifr) # Only 258 taxa remain
+
+### Need to use prune_samples as well?
+
+save(nutri, file = "nutriperso_phyloseq.rda")
 
 
 ### Preparation of ASV data ----
