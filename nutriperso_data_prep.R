@@ -138,8 +138,8 @@ sample_names(nutri)[1:5]
 
 ### Pre-process data. Transform to relative abundance and filter taxa
 # nutrir  <- transform_sample_counts(nutri, function(x) x / sum(x) )
-nutrifr <- filter_taxa(nutri, function(x) mean(x) > 1e-5, TRUE)
-ntaxa(nutrifr) # Only 258 taxa remain
+# nutrifr <- filter_taxa(nutri, function(x) mean(x) > 1e-5, TRUE)
+# ntaxa(nutrifr) # Only 258 taxa remain
 
 ### Need to use prune_samples as well?
 
