@@ -3,20 +3,13 @@
 load("nutriperso_phyloseq.rda")
 library(phyloseq)
 
-<<<<<<< HEAD
-# Plots. see:
-# http://joey711.github.io/phyloseq/plot_bar-examples#enterotypes_dataset_examples
-# Default plot is abundance
-plot_bar(physeq1)
-plot_bar(physeq1, fill = "Phylum") #+ theme(axis.labels.x = element_blank())
-=======
+
 # Plots. see: http://joey711.github.io/phyloseq/plot_bar-examples#enterotypes_dataset_examples
 # Default plot is abundance with stacked OTUs
 plot_bar(nutri)
 plot_bar(nutri, fill = "Phylum") #+ theme(axis.labels.x = element_blank())
->>>>>>> 540025a9495e676ff66aa33c420b02147885bdfa
 
-# Remind partipant variables
+# Remind participant variables
 colnames(sample_data(nutri))
 
 # Group by variables (hard to see because many OTUs)
@@ -62,7 +55,6 @@ ord <- ordinate(nutri, "NMDS", "bray")
 plot_ordination(nutri, ord, type="taxa", color="Phylum", title="taxa")
 
 # Plot of samples
-<<<<<<< HEAD
 plot_ordination(physeq1, GP.ord, type="samples", color="casnutpkt") + 
   theme_bw() + theme(legend.title = element_blank())
 plot_ordination(physeq1, GP.ord, type="samples", color="casnutpkt", shape="diabete_groupe")
@@ -75,10 +67,8 @@ plot_richness(physeq1, x="casnutpkt", color = "casnutpkt", measures = c("Shannon
   theme_bw() + theme(legend.title = element_blank(), axis.title.x = element_blank()) +
   geom_point(colour = "white") + theme(legend.position="none") +
   geom_jitter()
-=======
-plot_ordination(nutri, ord, type="samples", color="casnutpkt", shape="diabete_groupe")
 
->>>>>>> 540025a9495e676ff66aa33c420b02147885bdfa
+plot_ordination(nutri, ord, type="samples", color="casnutpkt", shape="diabete_groupe")
 
 # More info on enterotypes at https://enterotype.embl.de/enterotypes.html
 
