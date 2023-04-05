@@ -26,8 +26,7 @@ dat <- left_join(dat, micro, by = "ident")
 
 
 ### Preparation of OTU data ----
-# Start with OTU approach (distribution and taxonomies in separate tables)
-# For ASV see below
+# OTU approach, with distribution and taxonomies in separate tables. For ASV see below
 otus <- read.delim("NUTRIPERSO_assembled_350_TAB.txt")
 tax  <- read_tsv("NUTRIPERSO_assembled_350_OTU.tax", col_names = F)
 # Parsing failure rows 190 and 507 (concatenated cols), to remove
@@ -51,8 +50,8 @@ vec <- intersect(taxmat[, 1], otus$OTU)
 # Also see Semi's script microbiome_nfbc1.R
 
 # Remove OTU names and add back as rownames. Subset OTUs by their names in taxmat
-otumat <- otus[, -1]
-rownames(otumat) <- otus[, 1]
+otumat <- otus %>% column_to_rownames("OTU") 
+
 otumat1 <- otumat[vec, ]
 
 # Add colnames for taxonomies
@@ -68,12 +67,14 @@ rownames(taxmat) <- rownames(otumat1)
 # the UniFrac metric uses it for beta diversity calculations, as does the phylogenetic  
 # alpha diversity metric, Faith’s PD
 
-# Use msa package to align 16s sequences (uses command line tools clustal and muscle)
-# Only muscle worked (takes a while)
+# Read in fasta file and msa package to align 16s sequences 
+# Alignment uses command line tools clustal and muscle, only muscle worked (takes a while)
+library(Biostrings)
+seqs <- readDNAStringSet("NUTRIPERSO_assembled_350_OTU.fna")
+seqs.filt <- seqs[rownames(otumat1)]
+
 library(msa)
-dat1 <- readDNAStringSet("NUTRIPERSO_assembled_350_OTU.fna")
-retained.otu <- dat1[rownames(otumat1)]
-otu.align <- msa(retained.otu, type = "dna", method = "Muscle")
+otu.align <- msa(seqs.filt, type = "dna", method = "Muscle")
 
 # Convert to a seqinr object
 library(seqinr)

@@ -44,32 +44,25 @@ plot_richness(nutri, x="diabete_groupe")
 plot_richness(nutri, x="casnutpkt", color = "casnutpkt")
 plot_richness(nutri, x="diabete_groupe", measures = c("Shannon", "Simpson"))
 
-# Estimate alpha diversity for epidemiological models (based on diversity() from vegan)
-estimate_richness(nutri, measures = c("Shannon", "Simpson"))
+# Just selected measures
+plot_richness(nutri, x="casnutpkt", color = "casnutpkt", measures = c("Shannon", "Simpson")) +
+  theme_bw() + theme(legend.title = element_blank(), axis.title.x = element_blank()) +
+  geom_point(colour = "white") + theme(legend.position="none") +
+  geom_jitter()
 
-# Beta-diversity analysis and enterotypes
-# Ordination plots
+# Estimate alpha diversity for epidemiological models (based on diversity() from vegan)
+div <- estimate_richness(nutri, measures = c("Shannon", "Simpson"))
+
+# Beta-diversity analysis and enterotypes. Ordination plots
 # Plot of OTUs
 # http://joey711.github.io/phyloseq/plot_ordination-examples.html
 ord <- ordinate(nutri, "NMDS", "bray")
 plot_ordination(nutri, ord, type="taxa", color="Phylum", title="taxa")
 
 # Plot of samples
-plot_ordination(physeq1, GP.ord, type="samples", color="casnutpkt") + 
+plot_ordination(nutri, ord, type="samples", color="casnutpkt") + 
   theme_bw() + theme(legend.title = element_blank())
-plot_ordination(physeq1, GP.ord, type="samples", color="casnutpkt", shape="diabete_groupe")
-
-# Measures of alpha diversity
-plot_richness(physeq1, x="diabete_groupe")
-plot_richness(physeq1, x="casnutpkt", color = "casnutpkt")
-# Just selected measures
-plot_richness(physeq1, x="casnutpkt", color = "casnutpkt", measures = c("Shannon", "Simpson")) +
-  theme_bw() + theme(legend.title = element_blank(), axis.title.x = element_blank()) +
-  geom_point(colour = "white") + theme(legend.position="none") +
-  geom_jitter()
-
 plot_ordination(nutri, ord, type="samples", color="casnutpkt", shape="diabete_groupe")
-
 # More info on enterotypes at https://enterotype.embl.de/enterotypes.html
 
 
