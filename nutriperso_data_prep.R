@@ -13,9 +13,17 @@ micro <- read_xls("microbiome_20210106.xls")
 library(haven)
 # micro <- read_sas("nutriperso_20210304.sas7bdat")
 
-# Join 2 sets of participant data
+# Join 2 sets of participant data and code variables
 dat$ident <- as.character(dat$ident)
 dat <- left_join(dat, micro, by = "ident")
+
+varlist <- c("Tr_int1", "Tr_int2", "Tr_int3", "Tr_int4", "tabac", "Pb_dents1", "Pb_dents_dt1", "dent_app_o",
+            "dent_app_n", "dent_app_dt", "dent_app_com", "dent_app_bas", "dent_app_haut",
+            "dent_app_tj_o", "dent_app_tj_n", "dent_app_sup_o", "dent_app_sup_n", "RUN",
+            "diabete_groupe", "imc_oms_salive_k", "diabete_groupe1")
+
+dat <- dat %>% mutate(across((varlist), as.factor))
+            
 
 # 16s data
 # Two sets of data are provided, OTU and ASV. Explanation at:
@@ -117,12 +125,12 @@ library(phangorn)
 OTU = otu_table(otumat1, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat)
 
-# Combine objects
+# Combine objects and view
 physeq <- phyloseq(OTU, TAX)
 physeq
-plot_bar(physeq, fill = "Phylum")
 
 # Get particpant data (sample data)
+# Add rownames for samples removing the hyphen and subset rows to otumat1
 rownames(dat) <- str_remove(dat$ID, pattern = "-")
 sampdata1 <- dat[colnames(otumat1), ]
 sampledata <- sample_data(data.frame(sampdata1, row.names = sample_names(physeq),
