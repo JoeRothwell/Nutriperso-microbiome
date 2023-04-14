@@ -1,5 +1,7 @@
 library(tidyverse)
 # Example of how to calculate enterotypes from https://enterotype.embl.de/enterotypes.html
+
+# Get table of relative abundances (all samples add up to 1)
 dat <- read.table(url("https://enterotype.embl.de/MetaHIT_SangerSamples.genus.txt"), header=T, row.names=1, dec=".", sep="\t")
 dat <- dat[-1, ]
 
@@ -86,3 +88,28 @@ s.class(obs.bet$ls, fac=as.factor(data.cluster), grid=F,sub="Between-class analy
 obs.pcoa <- dudi.pco(data.dist, scannf=F, nf=3)
 dev.new()
 s.class(obs.pcoa$li, fac=as.factor(data.cluster), grid=F,sub="Principal coordiante analysis")
+
+
+# Using the bioconductor package
+library(BiocManager)
+BiocManager::install("mbOmic")
+library(mbOmic)
+library(data.table)
+
+# From https://bioconductor.org/packages/release/bioc/vignettes/mbOmic/inst/doc/enterotyping.html
+dat <- read.delim('http://enterotypes.org/ref_samples_abundance_MetaHIT.txt')
+dat <- impute::impute.knn(as.matrix(dat), k = 100)
+dat <- as.data.frame(dat$data+0.001) 
+setDT(dat, keep.rownames = TRUE)
+dat
+
+dat <- bSet(b =  dat)
+res <- estimate_k(dat)
+res
+
+ret <- enterotyping(dat, res$verOptCluster) 
+ret
+
+library(phyloseq)
+BiocManager::install("phyloseq")
+nutrir  <- transform_sample_counts(nutri, function(x) x / sum(x) )
