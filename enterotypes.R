@@ -1,4 +1,7 @@
+# Calculation of enterotypes using different methods
+
 library(tidyverse)
+load("nutriperso_phyloseq.rda")
 # Example of how to calculate enterotypes from https://enterotype.embl.de/enterotypes.html
 
 # Get table of relative abundances (all samples add up to 1)
@@ -153,3 +156,17 @@ res <- estimate_k(otus1)
 res
 ret <- enterotyping(otus1, res$verOptCluster) 
 ret
+
+### With phyloseq? Has distance methods
+# Get the JSD on the phyloseq object
+nutri.rel  <- transform_sample_counts(nutri, function(x) x / sum(x) )
+jsdist <- phyloseq::distance(nutri.rel, method="jsd")
+# or
+# JSD(physeq)
+
+# Get clusters
+data.cluster <- pam.clustering(jsdist, k=3)
+
+# Assess optimal number of clusters
+require(clusterSim)
+nclusters <- index.G1(t(otu_table(nutri.rel)), data.cluster, d = jsdist, centrotypes = "medoids")
