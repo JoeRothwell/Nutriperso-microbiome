@@ -69,8 +69,8 @@ rownames(taxmat) <- rownames(otumat1)
 
 
 
-### Get phylogenetic tree ----
-# Some info here: https://bioconductor.org/help/course-materials/2017/BioC2017/Day1/Workshops/Microbiome/MicrobiomeWorkflowII.html#construct_phylogenetic_tree
+# Get phylogenetic tree ----
+# See: https://bioconductor.org/help/course-materials/2017/BioC2017/Day1/Workshops/Microbiome/MicrobiomeWorkflowII.html#construct_phylogenetic_tree
 # Also: https://rachaellappan.github.io/16S-analysis/index.html . From this site:
 # the UniFrac metric uses it for beta diversity calculations, as does the phylogenetic  
 # alpha diversity metric, Faith’s PD
@@ -120,8 +120,8 @@ library(phangorn)
 
 
 
-### Make phyloseq object ----
-# (using constructor functions)
+# Make phyloseq object ----
+# using constructor functions
 OTU = otu_table(otumat1, taxa_are_rows = TRUE)
 TAX = tax_table(taxmat)
 
@@ -188,18 +188,46 @@ rownames(taxmat) <- rownames(asvmat1)
 
 
 
-# Get phylogenetic tree. Used by Faith's PD (alpha) and UniFrac (beta-diversity) metrics
+# Phylogenetic tree unavailable for ASV approach. Used by Faith's PD (alpha) and UniFrac (beta-diversity) metrics
 # Use msa package to align 16s sequences (uses command line tools clustal and muscle)
 # Only muscle worked (takes a while)
-dat1 <- readDNAStringSet("NUTRIPERSO_assembled_350_OTU.fna")
-retained.otu <- dat1[rownames(asvmat1)]
-library(msa)
-otu.align <- msa(retained.otu, type = "dna", method = "Muscle")
+# dat1 <- readDNAStringSet("NUTRIPERSO_assembled_350_OTU.fna")
+# retained.otu <- dat1[rownames(asvmat1)]
+# library(msa)
+# otu.align <- msa(retained.otu, type = "dna", method = "Muscle")
+# 
+# # Convert to a seqinr object
+# library(seqinr)
+# otu.align1 <- msaConvert(otu.align, type = "seqinr::alignment")
+# otu.dist <- dist.alignment(otu.align1, "identity")
+# 
+# # Neighbour-joining tree estimation in ape
+# library(ape)
 
-# Convert to a seqinr object
-library(seqinr)
-otu.align1 <- msaConvert(otu.align, type = "seqinr::alignment")
-otu.dist <- dist.alignment(otu.align1, "identity")
 
-# Neighbour-joining tree estimation in ape
-library(ape)
+### Make phyloseq object using constructor functions ----
+ASV = otu_table(asvmat1, taxa_are_rows = TRUE)
+TAX = tax_table(taxmat)
+
+# Combine objects and view
+nutri1 <- phyloseq(ASV, TAX)
+nutri1
+
+# Get particpant data (sample data)
+# Add rownames for samples removing the hyphen and subset rows to otumat1
+rownames(dat) <- str_remove(dat$ID, pattern = "-")
+sampdata1 <- dat[colnames(asvmat1), ]
+sampledata <- sample_data(data.frame(sampdata1, row.names = sample_names(nutri1),
+                                     stringsAsFactors = F))
+
+# Add sample data and phylogenetic tree
+nutri1 <- merge_phyloseq(nutri1, sampledata)
+nutri1
+
+### Overview of data
+ntaxa(nutri1)
+nsamples(nutri1)
+sample_names(nutri1)[1:5]
+
+# Save asv object to quickly reload in analysis scripts
+save(nutri1, file = "nutriperso_phyloseq_ASV.rda")
