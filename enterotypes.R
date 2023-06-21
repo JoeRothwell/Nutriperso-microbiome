@@ -1,6 +1,7 @@
 # Calculation of enterotypes using different methods
 
 library(tidyverse)
+# Example ----
 # Example of how to calculate enterotypes from https://enterotype.embl.de/enterotypes.html
 
 # Get table of relative abundances from https://enterotype.embl.de/MetaHIT_SangerSamples.genus.txt 
@@ -90,7 +91,7 @@ obs.pcoa <- dudi.pco(data.dist, scannf = F, nf = 3)
 s.class(obs.pcoa$li, fac = as.factor(data.cluster), grid = F, sub = "Principal coordinate analysis")
 
 
-#### Nutriperso data
+#### Nutriperso data ----
 
 load("nutriperso_phyloseq.rda")
 nutri.rel  <- transform_sample_counts(nutri, function(x) x / sum(x) )
@@ -125,10 +126,15 @@ data.cluster <- pam.clustering(data.dist, k = 2)
 # Cluster validation
 
 obs.silhouette <- mean(silhouette(data.cluster, data.dist)[ , 3])
-cat(obs.silhouette) #0.1899451
+cat(obs.silhouette) #0.1209738
 
 otus <- noise.removal(otus, percent=0.01)
 
+# Add enterotypes to otu table
+otus1$enterotype <- data.cluster
+
+  
+  
 ## Multi-dimentional scaling plots to visualise enterotypes
 ## Between class analysis (plot 1)
 library(ade4)
@@ -142,86 +148,25 @@ obs.pcoa <- dudi.pco(data.dist, scannf = F, nf = 3)
 #dev.new()
 s.class(obs.pcoa$li, fac = as.factor(data.cluster), grid = F, sub = "Principal coordinate analysis")
 
-# Using the mbOmic bioconductor package and data table
-library(BiocManager)
-BiocManager::install("mbOmic")
-library(mbOmic)
-library(data.table)
-
-# From https://bioconductor.org/packages/release/bioc/vignettes/mbOmic/inst/doc/enterotyping.html
-# Data at http://enterotypes.org/ref_samples_abundance_MetaHIT.txt
-
-dat <- read.delim("ref_samples_abundance_MetaHIT.txt")
-dat <- impute::impute.knn(as.matrix(dat), k = 100)
-dat <- as.data.frame(dat$data + 0.001) 
-setDT(dat, keep.rownames = TRUE)
-dat
-
-# Convert to bSet object and do enterotyping
-dat <- bSet(b = dat)
-res <- estimate_k(dat)
-res
-ret <- enterotyping(dat, res$verOptCluster) 
-ret
 
 
-### Get enterotypes for our Nutriperso data. Load phyloseq object
-library(phyloseq)
-
-# First transform OTU table to relative abundance
-nutri.rel  <- transform_sample_counts(nutri, function(x) x / sum(x) )
-otus <- otu_table(nutri.rel)
-data.dist <- dist.JSD(otus)
-
-# Get clusters
-data.cluster <- pam.clustering(data.dist, k=3)
-
-# Assess optimal number of clusters
-require(clusterSim)
-nclusters = index.G1(t(otus), data.cluster, d = data.dist, centrotypes = "medoids")
-
-# Try 1-20 clusters and plot optimal CH index
-nclusters=NULL
-
-for (k in 1:20) { 
-  if (k == 1) {
-    nclusters[k] = NA 
-  } else {
-    data.cluster_temp = pam.clustering(data.dist, k)
-    nclusters[k] = index.G1(t(otus), data.cluster_temp, d = data.dist,
-                          centrotypes = "medoids")
-  }
-}
-
-plot(nclusters, type="h", xlab="k clusters", ylab="CH index",main="Optimal number of clusters")
-data.cluster
-
-# Package method. Transform to relative abudance
-nutri.rel  <- transform_sample_counts(nutri, function(x) x / sum(x) )
-otus1 <- data.frame(otus)
-library(impute)
-otus1 <- impute.knn(as.matrix(otus1), k = 100)
-otus1 <- as.data.frame(otus1$data + 0.001) 
-setDT(otus1, keep.rownames = TRUE)
-
-otus1
-
-# Convert to bSet object and do enterotyping
-otus1 <- bSet(b = otus1)
-res <- estimate_k(otus1)
-res
-ret <- enterotyping(otus1, res$verOptCluster) 
-ret
-
-### With phyloseq? Has distance methods
+### Same as above but using phyloseq (has distance methods)
 # https://joey711.github.io/phyloseq/distance.html
 # Get the JSD on the phyloseq object
+
+library(phyloseq)
 nutri.rel  <- transform_sample_counts(nutri, function(x) x / sum(x) )
 jsdist <- phyloseq::distance(nutri.rel, method="jsd") # or JSD(physeq)
 # Get clusters
-clust <- as.vector(pam(jsdist, 3, diss = TRUE)$clustering)
-clust <- pam(jsdist, 3, diss = TRUE)$clustering
 
+# Find optimal number clusters (see above)
+
+#clust <- as.vector(pam(jsdist, 2, diss = TRUE)$clustering)
+clust <- pam(jsdist, 2, diss = TRUE)$clustering
+clust1 <- data.frame(clust) %>% rownames_to_column("ID")
+
+library(broom)
+otus.clust <- tidy(clust)
 
 jsMDS <- ordinate(nutri, "MDS", distance = jsdist)
 p <- plot_ordination(nutri, jsMDS, color="casnutpkt", shape = clust)
@@ -235,3 +180,27 @@ data.cluster <- pam.clustering(jsdist, k=3)
 # Assess optimal number of clusters
 require(clusterSim)
 nclusters <- index.G1(t(otu_table(nutri.rel)), data.cluster, d = jsdist, centrotypes = "medoids")
+
+
+# Identification of clusters
+# From https://bioconductor.org/packages/release/bioc/vignettes/mbOmic/inst/doc/enterotyping.html
+# Data at http://enterotypes.org/ref_samples_abundance_MetaHIT.txt
+
+# Using the mbOmic bioconductor package and data table
+#library(BiocManager)
+#BiocManager::install("mbOmic")
+library(mbOmic)
+library(data.table)
+
+dat <- read.delim("ref_samples_abundance_MetaHIT.txt")
+dat <- impute::impute.knn(as.matrix(dat), k = 100)
+dat <- as.data.frame(dat$data + 0.001) 
+setDT(dat, keep.rownames = TRUE)
+dat
+
+# Convert to bSet object and do enterotyping
+dat <- bSet(b = dat)
+res <- estimate_k(dat)
+res
+ret <- enterotyping(dat, res$verOptCluster) 
+ret
