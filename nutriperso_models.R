@@ -2,11 +2,13 @@
 load("nutriperso_phyloseq.rda")
 
 # Join alpha diversity data from nutriperso_16s_analysis.R. Make ID variables consistent
+library(tidyverse)
+library(phyloseq)
 dat1 <- data.frame(sample_data(nutri)) %>% mutate(ID = str_remove(ID, pattern = "-"))
 
 # Estimate alpha diversity for epidemiological models (based on diversity() from vegan) and join
 div <- estimate_richness(nutri, measures = c("Shannon", "Simpson"))
-div1 <- div %>% rownames_to_column() %>% rename(rowname = "ID")
+div1 <- div %>% rownames_to_column(var = "ID")
 divdat <- left_join(dat1, div1)
 
 
