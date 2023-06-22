@@ -162,6 +162,7 @@ jsdist <- phyloseq::distance(nutri.rel, method="jsd") # or JSD(physeq)
 # Find optimal number clusters (see above)
 
 #clust <- as.vector(pam(jsdist, 2, diss = TRUE)$clustering)
+library(cluster)
 clust <- pam(jsdist, 2, diss = TRUE)$clustering
 clust1 <- data.frame(clust) %>% rownames_to_column("ID")
 
