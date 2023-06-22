@@ -12,7 +12,7 @@ div1 <- div %>% rownames_to_column(var = "ID")
 divdat <- left_join(dat1, div1)
 
 
-# Get enterotypes
+# Get enterotypes and add to diversity table
 nutri.rel  <- transform_sample_counts(nutri, function(x) x / sum(x) )
 jsdist <- phyloseq::distance(nutri.rel, method="jsd") # or JSD(physeq)
 # Get clusters
@@ -25,7 +25,7 @@ clust <- pam(jsdist, 2, diss = TRUE)$clustering
 #clust1 <- data.frame(clust) %>% rownames_to_column("ID")
 
 divdat$enterotype <- clust
-
+divdat %>% select(ID, Shannon, Simpson, enterotype) %>% write_csv("Nutriperso_diversity.csv")
 
 # Hack to code case and control as 1 and 0
 divdat$ct <- as.numeric(fct_rev(divdat$casnutpkt)) - 1
