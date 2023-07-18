@@ -49,3 +49,7 @@ tidy(mod3, exponentiate = TRUE, conf.int = TRUE)
 tidy(mod4, exponentiate = TRUE, conf.int = TRUE)
 
 
+# Enterotypes. First read in data calculated in enterotypes.R
+nutr <- read.csv("Nutriperso_diversity.csv")
+
+

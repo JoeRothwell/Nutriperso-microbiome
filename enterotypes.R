@@ -99,9 +99,6 @@ otus <- otu_table(nutri.rel)
 
 data.dist <- dist.JSD(otus)
 
-# Get clusters (need to specify how many)
-data.cluster <- pam.clustering(data.dist, k = 3)
-
 # Assess optimal number of clusters
 library(clusterSim)
 nclusters <- index.G1(t(otus), data.cluster, d = data.dist, centrotypes = "medoids")
@@ -140,7 +137,7 @@ otus1$enterotype <- data.cluster
 library(ade4)
 obs.pca <- dudi.pca(data.frame(t(otus)), scannf = F, nf = 10)
 obs.bet <- bca(obs.pca, fac = as.factor(data.cluster), scannf = F, nf = k-1) 
-#dev.new()
+dev.new()
 s.class(obs.bet$ls, fac = as.factor(data.cluster), grid = F, sub = "Between-class analysis")
 
 # Principal coordinate analysis (plot 2)
@@ -152,8 +149,9 @@ s.class(obs.pcoa$li, fac = as.factor(data.cluster), grid = F, sub = "Principal c
 
 ### Same as above but using phyloseq (has distance methods)
 # https://joey711.github.io/phyloseq/distance.html
-# Get the JSD on the phyloseq object
+load("nutriperso_phyloseq.rda")
 
+# Get the JSD on the phyloseq object
 library(phyloseq)
 nutri.rel  <- transform_sample_counts(nutri, function(x) x / sum(x) )
 jsdist <- phyloseq::distance(nutri.rel, method="jsd") # or JSD(physeq)
