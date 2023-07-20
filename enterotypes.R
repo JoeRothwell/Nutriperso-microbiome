@@ -47,7 +47,7 @@ pam.clustering <- function(x, k) {
   return(clust)
 }
 
-# Get clusters
+# Do a test run on our dataset with number of clusters set to 3
 data.cluster <- pam.clustering(data.dist, k = 3)
 
 # Assess optimal number of clusters
@@ -62,7 +62,7 @@ for (k in 1:20) {
     nclusters[k] = NA 
   } else {
     data.cluster_temp <- pam.clustering(data.dist, k)
-    nclusters[k] <- index.G1(t(dat),data.cluster_temp,  d = data.dist, centrotypes = "medoids")
+    nclusters[k] <- index.G1(t(dat), data.cluster_temp, d = data.dist, centrotypes = "medoids")
   }
 }
 
@@ -74,6 +74,15 @@ plot(nclusters, type="h", xlab="k clusters", ylab="CH index", main="Optimal numb
 
 obs.silhouette <- mean(silhouette(data.cluster, data.dist)[ , 3])
 cat(obs.silhouette) #0.1899451
+
+# Remove low abundance genera
+noise.removal <- function(dataframe, percent=0.01, top=NULL){
+  dataframe -> Matrix
+  bigones <- rowSums(Matrix) * 100 / (sum(rowSums(Matrix))) > percent 
+  Matrix_1 <- Matrix[bigones, ]
+  print(percent)
+  return(Matrix_1)
+}
 
 dat <- noise.removal(dat, percent=0.01)
 
@@ -98,6 +107,10 @@ nutri.rel  <- transform_sample_counts(nutri, function(x) x / sum(x) )
 otus <- otu_table(nutri.rel)
 
 data.dist <- dist.JSD(otus)
+data.dist1 <- phyloseq::distance(nutri.rel, method="jsd")
+
+# Do a test run on our dataset with number of clusters set to 3
+data.cluster <- pam.clustering(data.dist, k = 3)
 
 # Assess optimal number of clusters
 library(clusterSim)
@@ -120,10 +133,18 @@ plot(nclusters, type="h", xlab="k clusters", ylab="CH index", main="Optimal numb
 
 data.cluster <- pam.clustering(data.dist, k = 2)
 
-# Cluster validation
-
+# Cluster validation (index 3 is the sil_width for each obs)
 obs.silhouette <- mean(silhouette(data.cluster, data.dist)[ , 3])
-cat(obs.silhouette) #0.1209738
+cat(obs.silhouette) #0.1209738 (acceptable)
+
+# Remove low abundance genera
+noise.removal <- function(dataframe, percent=0.01, top=NULL){
+  dataframe -> Matrix
+  bigones <- rowSums(Matrix)*100/(sum(rowSums(Matrix))) > percent 
+  Matrix_1 <- Matrix[bigones,]
+  print(percent)
+  return(Matrix_1)
+}
 
 otus <- noise.removal(otus, percent=0.01)
 
@@ -179,6 +200,7 @@ data.cluster <- pam.clustering(jsdist, k=3)
 # Assess optimal number of clusters
 require(clusterSim)
 nclusters <- index.G1(t(otu_table(nutri.rel)), data.cluster, d = jsdist, centrotypes = "medoids")
+plot(nclusters, type="h", xlab="k clusters", ylab="CH index", main="Optimal number of clusters")
 
 
 # Identification of clusters

@@ -49,7 +49,17 @@ tidy(mod3, exponentiate = TRUE, conf.int = TRUE)
 tidy(mod4, exponentiate = TRUE, conf.int = TRUE)
 
 
-# Enterotypes. First read in data calculated in enterotypes.R
-nutr <- read.csv("Nutriperso_diversity.csv")
+# Models for enterotypes
+# Chi-sq test
+table(divdat$casnutpkt, divdat$enterotype)
+chisq.test(table(divdat$casnutpkt, divdat$enterotype))
+mcnemar.test(table(divdat$casnutpkt, divdat$enterotype))
+# p-value 0.009283, error?
 
+# Conditional logistic regression
+mod5 <- clogit(ct ~ enterotype + strata(matchnutpkt), divdat)
+mod6 <- clogit(ct ~ enterotype + RUN + imcq10 + alcoolq8 + METsTotalQ8 + SUCRES + strata(matchnutpkt), divdat)
 
+tidy(mod5, exponentiate = TRUE, conf.int = TRUE)
+tidy(mod6, exponentiate = TRUE, conf.int = TRUE)
+# No significant differences between enterotypes
